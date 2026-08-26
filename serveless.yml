@@ -1,0 +1,45 @@
+name: Deploy Lambda Auth
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout do código
+      uses: actions/checkout@v3
+
+    - name: Configurar Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20'
+
+    - name: Instalar Dependências
+      run: npm ci
+
+    - name: Empacotar Lambda
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      run: zip -r function.zip src/ node_modules/ package.json
+
+    - name: Configurar Credenciais AWS
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }} # Necessário na AWS Academy
+        aws-region: us-east-1
+
+    - name: Deploy na AWS Lambda
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      run: |
+        aws lambda update-function-code \
+          --function-name techchallenge-auth-lambda \
+          --zip-file fileb://function.zip
