@@ -3,11 +3,12 @@ const jwt = require('jsonwebtoken');
 
 // Configuração do pool fora do handler para reuso em exibições subsequentes (warm start)
 const dbConfig = {
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    connectTimeout: 5000
+    host: process.env.DB_HOST || 'database',
+    port: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : 3306,
+    user: process.env.DB_USER || 'dbadmin',
+    password: process.env.DB_PASSWORD || 'secretpassword',
+    database: process.env.DB_NAME || 'techchallenge',
+    connectTimeout: 10000
 };
 
 const JWT_SECRET = process.env.JWT_SECRET || 'sua_chave_secreta_super_segura';
@@ -48,7 +49,7 @@ exports.handler = async (event) => {
         // Consulta ao Banco de Dados Gerenciado (RDS)
         const connection = await mysql.createConnection(dbConfig);
         const [rows] = await connection.execute(
-            'SELECT id, nome, cpf, status FROM clientes WHERE cpf = ? LIMIT 1', 
+            'SELECT id, name, document FROM customers WHERE document = ? LIMIT 1', 
             [cpfLimpo]
         );
         await connection.end();
@@ -63,13 +64,13 @@ exports.handler = async (event) => {
 
         const cliente = rows[0];
 
-        if (cliente.status !== 'ATIVO') {
-            return {
-                statusCode: 403,
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ message: "Cliente inativo no sistema." })
-            };
-        }
+        // if (cliente.status !== 'ATIVO') {
+        //     return {
+        //         statusCode: 403,
+        //         headers: { "Content-Type": "application/json" },
+        //         body: JSON.stringify({ message: "Cliente inativo no sistema." })
+        //     };
+        // }
 
         // Geração do JWT
         const token = jwt.sign(
