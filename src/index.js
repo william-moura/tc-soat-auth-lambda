@@ -76,8 +76,8 @@ exports.handler = async (event) => {
         const token = jwt.sign(
             { 
                 sub: cliente.id, 
-                cpf: cliente.cpf,
-                nome: cliente.nome 
+                cpf: cliente.document,
+                nome: cliente.name 
             }, 
             JWT_SECRET, 
             { expiresIn: '2h' }
