@@ -13,6 +13,14 @@ const dbConfig = {
 
 const JWT_SECRET = process.env.JWT_SECRET || 'sua_chave_secreta_super_segura';
 
+// Headers padrão de CORS aplicados em TODAS as respostas
+const corsHeaders = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Trace-Id",
+    "Access-Control-Allow-Methods": "OPTIONS, POST",
+    "Content-Type": "application/json"
+};
+
 // Função para validar formato básico de CPF
 function validarCPF(cpf) {
     cpf = cpf.replace(/[^\d]+/g, '');
@@ -33,13 +41,22 @@ function validarCPF(cpf) {
 
 exports.handler = async (event) => {
     try {
+        // Trata requisição Preflight (OPTIONS) feita pelo navegador/Swagger
+        if (event.httpMethod === 'OPTIONS') {
+            return {
+                statusCode: 200,
+                headers: corsHeaders,
+                body: ''
+            };
+        }
+
         const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body;
         const { cpf } = body || {};
 
         if (!cpf || !validarCPF(cpf)) {
             return {
                 statusCode: 400,
-                headers: { "Content-Type": "application/json" },
+                headers: corsHeaders,
                 body: JSON.stringify({ message: "CPF inválido ou não informado." })
             };
         }
@@ -56,28 +73,18 @@ exports.handler = async (event) => {
 
         if (rows.length === 0) {
             return {
-                statusCode: 404,
-                headers: { "Content-Type": "application/json" },
+                statusCode: 404, 
+                headers: corsHeaders,               
                 body: JSON.stringify({ message: "Cliente não encontrado na base de dados." })
             };
         }
 
         const cliente = rows[0];
 
-        // if (cliente.status !== 'ATIVO') {
-        //     return {
-        //         statusCode: 403,
-        //         headers: { "Content-Type": "application/json" },
-        //         body: JSON.stringify({ message: "Cliente inativo no sistema." })
-        //     };
-        // }
-
-        // Geração do JWT
+        // Geração do JWT (Usando as propriedades corretas do SELECT: name e document)
         const token = jwt.sign(
             { 
-                sub: cliente.id, 
-                cpf: cliente.document,
-                nome: cliente.name 
+                sub: cliente.id
             }, 
             JWT_SECRET, 
             { expiresIn: '2h' }
@@ -85,7 +92,7 @@ exports.handler = async (event) => {
 
         return {
             statusCode: 200,
-            headers: { "Content-Type": "application/json" },
+            headers: corsHeaders, // <--- CORS incluso na resposta 200
             body: JSON.stringify({
                 access_token: token,
                 token_type: "Bearer",
@@ -97,7 +104,7 @@ exports.handler = async (event) => {
         console.error("Erro no processamento da autenticação:", error);
         return {
             statusCode: 500,
-            headers: { "Content-Type": "application/json" },
+            headers: corsHeaders, // <--- CORS incluso no erro 500
             body: JSON.stringify({ message: "Erro interno no servidor de autenticação." })
         };
     }
