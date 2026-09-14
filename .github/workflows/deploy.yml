@@ -3,7 +3,7 @@ name: Deploy Lambda Auth to AWS
 on:
   push:
     branches:
-      - main  # Dispara o deploy sempre que fizer push na main
+      - master  # Dispara o deploy sempre que fizer push na main
 
 jobs:
   deploy:
