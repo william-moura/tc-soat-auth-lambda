@@ -22,7 +22,7 @@ jobs:
 
       # 3. Instala as dependências de produção
       - name: Install dependencies
-        run: npm ci --only=production
+        run: npm install --omit=dev
 
       # 4. Gera o arquivo ZIP contendo o código e node_modules
       - name: Create ZIP package
