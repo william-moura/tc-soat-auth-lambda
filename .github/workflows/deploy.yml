@@ -1,0 +1,58 @@
+name: Deploy Lambda Auth to AWS
+
+on:
+  push:
+    branches:
+      - main  # Dispara o deploy sempre que fizer push na main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Baixa o código do repositório
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Configura o Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # 3. Instala as dependências de produção
+      - name: Install dependencies
+        run: npm ci --only=production
+
+      # 4. Gera o arquivo ZIP contendo o código e node_modules
+      - name: Create ZIP package
+        run: zip -r function.zip index.js package.json node_modules/
+
+      # 5. Configura as credenciais da AWS temporárias do Academy
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      # 6. Faz o deploy na AWS Lambda (Cria se não existir, ou atualiza o código)
+      - name: Deploy to AWS Lambda
+        run: |
+          ROLE_ARN=$(aws iam get-role --role-name LabRole --query 'Role.Arn' --output text)
+          
+          # Tenta atualizar o código caso a função já exista
+          aws lambda update-function-code \
+            --function-name tc-soat-auth-lambda \
+            --zip-file fileb://function.zip || \
+          
+          # Se não existir, cria a função do zero usando a LabRole
+          aws lambda create-function \
+            --function-name tc-soat-auth-lambda \
+            --runtime nodejs20.x \
+            --role $ROLE_ARN \
+            --handler index.handler \
+            --zip-file fileb://function.zip \
+            --timeout 15 \
+            --environment "Variables={DB_HOST=${{ secrets.DB_HOST }},DB_USER=dbadmin,DB_PASSWORD=secretpassword,DB_NAME=techchallenge,JWT_SECRET=${{ secrets.JWT_SECRET }}}"

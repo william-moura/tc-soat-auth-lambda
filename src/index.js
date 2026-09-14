@@ -3,14 +3,23 @@ const jwt = require('jsonwebtoken');
 
 // Configuração do pool fora do handler para reuso em exibições subsequentes (warm start)
 const dbConfig = {
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    connectTimeout: 5000
+    host: process.env.DB_HOST || 'database',
+    port: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : 3306,
+    user: process.env.DB_USER || 'dbadmin',
+    password: process.env.DB_PASSWORD || 'secretpassword',
+    database: process.env.DB_NAME || 'techchallenge',
+    connectTimeout: 10000
 };
 
 const JWT_SECRET = process.env.JWT_SECRET || 'sua_chave_secreta_super_segura';
+
+// Headers padrão de CORS aplicados em TODAS as respostas
+const corsHeaders = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Trace-Id",
+    "Access-Control-Allow-Methods": "OPTIONS, POST",
+    "Content-Type": "application/json"
+};
 
 // Função para validar formato básico de CPF
 function validarCPF(cpf) {
@@ -32,13 +41,22 @@ function validarCPF(cpf) {
 
 exports.handler = async (event) => {
     try {
+        // Trata requisição Preflight (OPTIONS) feita pelo navegador/Swagger
+        if (event.httpMethod === 'OPTIONS') {
+            return {
+                statusCode: 200,
+                headers: corsHeaders,
+                body: ''
+            };
+        }
+
         const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body;
         const { cpf } = body || {};
 
         if (!cpf || !validarCPF(cpf)) {
             return {
                 statusCode: 400,
-                headers: { "Content-Type": "application/json" },
+                headers: corsHeaders,
                 body: JSON.stringify({ message: "CPF inválido ou não informado." })
             };
         }
@@ -48,35 +66,25 @@ exports.handler = async (event) => {
         // Consulta ao Banco de Dados Gerenciado (RDS)
         const connection = await mysql.createConnection(dbConfig);
         const [rows] = await connection.execute(
-            'SELECT id, nome, cpf, status FROM clientes WHERE cpf = ? LIMIT 1', 
+            'SELECT id, name, document FROM customers WHERE document = ? LIMIT 1', 
             [cpfLimpo]
         );
         await connection.end();
 
         if (rows.length === 0) {
             return {
-                statusCode: 404,
-                headers: { "Content-Type": "application/json" },
+                statusCode: 404, 
+                headers: corsHeaders,               
                 body: JSON.stringify({ message: "Cliente não encontrado na base de dados." })
             };
         }
 
         const cliente = rows[0];
 
-        if (cliente.status !== 'ATIVO') {
-            return {
-                statusCode: 403,
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ message: "Cliente inativo no sistema." })
-            };
-        }
-
-        // Geração do JWT
+        // Geração do JWT (Usando as propriedades corretas do SELECT: name e document)
         const token = jwt.sign(
             { 
-                sub: cliente.id, 
-                cpf: cliente.cpf,
-                nome: cliente.nome 
+                sub: cliente.id
             }, 
             JWT_SECRET, 
             { expiresIn: '2h' }
@@ -84,7 +92,7 @@ exports.handler = async (event) => {
 
         return {
             statusCode: 200,
-            headers: { "Content-Type": "application/json" },
+            headers: corsHeaders, // <--- CORS incluso na resposta 200
             body: JSON.stringify({
                 access_token: token,
                 token_type: "Bearer",
@@ -96,7 +104,7 @@ exports.handler = async (event) => {
         console.error("Erro no processamento da autenticação:", error);
         return {
             statusCode: 500,
-            headers: { "Content-Type": "application/json" },
+            headers: corsHeaders, // <--- CORS incluso no erro 500
             body: JSON.stringify({ message: "Erro interno no servidor de autenticação." })
         };
     }
