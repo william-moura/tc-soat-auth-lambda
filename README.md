@@ -1,4 +1,3 @@
-### File 4: `tc-soat-auth-lambda/README.md`
 
 # 🔐 Tech Challenge - Autenticação Serverless (AWS Lambda)
 
