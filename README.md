@@ -1,6 +1,5 @@
 ### File 4: `tc-soat-auth-lambda/README.md`
 
-```markdown
 # 🔐 Tech Challenge - Autenticação Serverless (AWS Lambda)
 
  📌 **Nota:** Este repositório é parte integrante do ecossistema **Tech Challenge**. Para conferir a visão geral da aplicação, acesse o repositório principal: [tech-challenge](https://github.com/william-moura/tech-challenge).
