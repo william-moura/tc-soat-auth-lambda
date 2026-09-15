@@ -1,36 +1,40 @@
----
-
-### 4. `tc-soat-auth-lambda` (Serviço de Autenticação / Lambda)
-
-Crie ou atualize o arquivo **`README.md`** neste repositório:
+### File 4: `tc-soat-auth-lambda/README.md`
 
 ```markdown
-# 🔐 Tech Challenge - Autenticação (AWS Lambda)
+# 🔐 Tech Challenge - Autenticação Serverless (AWS Lambda)
 
-Serviço Serverless responsável pelo fluxo de autenticação e validação de tokens de usuários do sistema, integrado diretamente ao **AWS API Gateway (HTTP API)**.
+> 📌 **Nota:** Este repositório é parte integrante do ecossistema **Tech Challenge**. Para conferir a visão geral da aplicação, acesse o repositório principal: [tech-challenge](https://github.com/william-moura/tech-challenge).
 
----
-
-## ⚡ Arquitetura Serverless
-
-* **Compute:** AWS Lambda
-* **Integração:** AWS API Gateway v2 (`HTTP API`) via rota `POST /auth`.
-* **Runtime:** Node.js / Python (de acordo com a implementação da função).
-* **Segurança:** Permissão `aws_lambda_permission` gerenciada para invocação exclusiva do API Gateway do projeto.
+Este repositório gerencia a função **AWS Lambda** de autenticação do sistema, integrada ao **AWS API Gateway v2 (HTTP API)**.
 
 ---
 
-## 🔑 Configuração de Secrets (GitHub Actions)
+## ⚡ Arquitetura & Funcionamento
+
+* **Serviço Compute:** AWS Lambda (`tc-soat-auth-lambda`)
+* **Integrador de Entrada:** AWS API Gateway HTTP API na rota `POST /auth`
+* **Escalabilidade:** Serverless (sob demanda, sem gerenciamento de servidores)
+* **IAM & Permissões:** Permissão de invocação concedida via `aws_lambda_permission` vinculada ao API Gateway provisionado no repositório `tc-soat-k8s-infra`.
+
+---
+
+## 🔑 Variáveis & Secrets (GitHub Actions)
+
+Cadastre as seguintes Secrets em **Settings > Secrets and variables > Actions**:
 
 | Secret | Descrição |
 | :--- | :--- |
-| `AWS_ACCESS_KEY_ID` | Chave de acesso temporária do AWS Academy |
-| `AWS_SECRET_ACCESS_KEY` | Chave secreta temporária do AWS Academy |
-| `AWS_SESSION_TOKEN` | Token de sessão do AWS Academy |
+| `AWS_ACCESS_KEY_ID` | Chave de acesso temporária da AWS |
+| `AWS_SECRET_ACCESS_KEY` | Chave secreta temporária da AWS |
+| `AWS_SESSION_TOKEN` | Token de sessão temporário da AWS |
 
 ---
 
-## 🔄 Ordem de Implantação
+## 🔄 Ordem de Implantação do Ecossistema
 
-1. Executar a pipeline deste repositório para criar a função **`tc-soat-auth-lambda`** na conta AWS.
-2. Executar a pipeline do repositório `tc-soat-k8s-infra` para conectar o API Gateway à Lambda via ARN dinâmico (`arn:aws:lambda:us-east-1:<ACCOUNT_ID>:function:tc-soat-auth-lambda`).
+Para garantir o funcionamento completo das dependências entre os serviços:
+
+1. **1º:** Executar o deploy do repositório **`tc-soat-auth-lambda`** para publicar a função na AWS.
+2. **2º:** Executar o deploy do repositório **`tc-soat-k8s-infra`** (o Terraform irá associar a rota do API Gateway à Lambda já existente).
+3. **3º:** Executar o deploy do repositório **`tc-soat-db-infra`** para criar o banco de dados RDS.
+4. **4º:** Executar o deploy do repositório **`tech-challenge`** para subir a aplicação Laravel no K3s.
