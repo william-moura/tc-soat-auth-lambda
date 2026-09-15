@@ -3,7 +3,7 @@
 ```markdown
 # 🔐 Tech Challenge - Autenticação Serverless (AWS Lambda)
 
-> 📌 **Nota:** Este repositório é parte integrante do ecossistema **Tech Challenge**. Para conferir a visão geral da aplicação, acesse o repositório principal: [tech-challenge](https://github.com/william-moura/tech-challenge).
+ 📌 **Nota:** Este repositório é parte integrante do ecossistema **Tech Challenge**. Para conferir a visão geral da aplicação, acesse o repositório principal: [tech-challenge](https://github.com/william-moura/tech-challenge).
 
 Este repositório gerencia a função **AWS Lambda** de autenticação do sistema, integrada ao **AWS API Gateway v2 (HTTP API)**.
 
