@@ -2,7 +2,9 @@ name: Deploy AWS Lambda
 
 on:
   pull_request:
-    branches: [ "master" ]
+    branches:
+      - main
+      - master
 
 jobs:
   deploy:
@@ -40,9 +42,3 @@ jobs:
           aws lambda update-function-code \
             --function-name tc-soat-auth-lambda \
             --zip-file fileb://function.zip
-
-      - name: Ajustar Configuração do Handler
-        run: |
-          aws lambda update-function-configuration \
-            --function-name tc-soat-auth-lambda \
-            --handler index.handler
