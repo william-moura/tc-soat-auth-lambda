@@ -2,8 +2,7 @@ name: Deploy AWS Lambda
 
 on:
   pull_request:
-    branches:      
-      - master
+    branches: [ "master" ]
 
 jobs:
   deploy:
@@ -21,7 +20,7 @@ jobs:
       - name: Instalar Dependências
         run: |
           if [ -f package.json ]; then
-            npm ci
+            npm install --production
           fi
 
       - name: Criar Pacote ZIP
