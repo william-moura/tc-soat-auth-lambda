@@ -46,19 +46,18 @@ jobs:
           aws lambda update-function-configuration \
             --function-name tc-soat-auth-lambda \
             --handler index.handler
-      - name: Atualizar Código da Lambda na AWS - Versão 2
+      - name: Atualizar Código da Lambda na AWS
         run: |
           aws lambda update-function-code \
             --function-name tc-soat-auth-lambda \
             --zip-file fileb://function.zip
 
-      - name: Aguardar Conclusão da Atualização
+      - name: Aguardar e Ajustar Handler (com Retry)
         run: |
-          aws lambda wait function-updated \
-            --function-name tc-soat-auth-lambda
-
-      - name: Ajustar Configuração do Handler
-        run: |
+          echo "Aguardando atualizacao do codigo..."
+          aws lambda wait function-updated --function-name tc-soat-auth-lambda || sleep 10
+          
+          echo "Atualizando configuracao do Handler..."
           aws lambda update-function-configuration \
             --function-name tc-soat-auth-lambda \
-            --handler index.handler
+            --handler index.handler || (sleep 10 && aws lambda update-function-configuration --function-name tc-soat-auth-lambda --handler index.handler)
